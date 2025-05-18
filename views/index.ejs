@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Air Quality Monitor</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1>🌆 Air Quality Monitor</h1>
+    
+    <form action="/air-quality" method="get">
+      <input 
+        type="text" 
+        name="location" 
+        placeholder="Enter city or county" 
+        value="<%= defaultLocation %>"
+        required
+      >
+      <button type="submit">Check Air Quality</button>
+    </form>
+
+    <% if (error) { %>
+      <div class="error"><%= error %></div>
+    <% } %>
+
+    <% if (aqiData) { %>
+      <div class="aqi-result <%= helpers.getAqiClass(aqiData.main.aqi) %>">
+        <h2><%= defaultLocation %> - AQI: <%= aqiData.main.aqi %></h2>
+        <p><%= helpers.getAqiDescription(aqiData.main.aqi) %></p>
+        
+        <h3>Pollutants (µg/m³)</h3>
+        <div class="pollutants">
+          <div class="pollutant">
+            <strong>CO</strong> (Carbon Monoxide): <%= aqiData.components.co %>
+          </div>
+          <div class="pollutant">
+            <strong>NO₂</strong> (Nitrogen Dioxide): <%= aqiData.components.no2 %>
+          </div>
+          <div class="pollutant">
+            <strong>O₃</strong> (Ozone): <%= aqiData.components.o3 %>
+          </div>
+          <div class="pollutant">
+            <strong>PM2.5</strong> (Fine Particles): <%= aqiData.components.pm2_5 %>
+          </div>
+          <div class="pollutant">
+            <strong>PM10</strong> (Coarse Particles): <%= aqiData.components.pm10 %>
+          </div>
+          <div class="pollutant">
+            <strong>SO₂</strong> (Sulphur Dioxide): <%= aqiData.components.so2 %>
+          </div>
+        </div>
+      </div>
+    <% } %>
+  </div>
+</body>
+</html>
