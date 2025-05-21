@@ -16,22 +16,25 @@ if (!OPENWEATHER_API_KEY) {
 app.use(express.static('public'));
 app.set('view engine', 'ejs');
 
+// Add helper functions to res.locals
+app.use((req, res, next) => {
+  res.locals.getAqiClass = (aqi) => ['good', 'moderate', 'unhealthy-sensitive', 'unhealthy', 'very-unhealthy'][aqi - 1] || '';
+  res.locals.getAqiDescription = (aqi) => [
+    'Good - Air quality is satisfactory',
+    'Moderate - Acceptable quality',
+    'Unhealthy for sensitive groups',
+    'Unhealthy - Health risks',
+    'Very Unhealthy - Health alert'
+  ][aqi - 1] || 'Unknown';
+  next();
+});
+
 // Routes
 app.get('/', (req, res) => {
   res.render('index', { 
     aqiData: null, 
     error: null,
-    defaultLocation: 'New York',
-    helpers: {
-      getAqiClass: (aqi) => ['good', 'moderate', 'unhealthy-sensitive', 'unhealthy', 'very-unhealthy'][aqi - 1] || '',
-      getAqiDescription: (aqi) => [
-        'Good - Air quality is satisfactory',
-        'Moderate - Acceptable quality',
-        'Unhealthy for sensitive groups',
-        'Unhealthy - Health risks',
-        'Very Unhealthy - Health alert'
-      ][aqi - 1] || 'Unknown'
-    }
+    defaultLocation: 'New York'
   });
 });
 
@@ -42,11 +45,7 @@ app.get('/air-quality', async (req, res) => {
     return res.render('index', { 
       aqiData: null, 
       error: 'Please enter a city or county name',
-      defaultLocation: '',
-      helpers: {
-        getAqiClass: () => '',
-        getAqiDescription: () => ''
-      }
+      defaultLocation: ''
     });
   }
 
@@ -74,33 +73,24 @@ app.get('/air-quality', async (req, res) => {
     res.render('index', { 
       aqiData: aqiResponse.data.list[0], 
       error: null,
-      defaultLocation: location,
-      helpers: {
-        getAqiClass: (aqi) => ['good', 'moderate', 'unhealthy-sensitive', 'unhealthy', 'very-unhealthy'][aqi - 1] || '',
-        getAqiDescription: (aqi) => [
-          'Good - Air quality is satisfactory',
-          'Moderate - Acceptable quality',
-          'Unhealthy for sensitive groups',
-          'Unhealthy - Health risks',
-          'Very Unhealthy - Health alert'
-        ][aqi - 1] || 'Unknown'
-      }
+      defaultLocation: location
     });
   } catch (error) {
     console.error('Error:', error.message);
     res.render('index', { 
       aqiData: null, 
       error: error.message || 'Failed to fetch data',
-      defaultLocation: location,
-      helpers: {
-        getAqiClass: () => '',
-        getAqiDescription: () => ''
-      }
+      defaultLocation: location
     });
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
-module.exports = app; 
+// Export the Express app for bin/www
+module.exports = app;
+
+// Only start server if not required by another module
+if (require.main === module) {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
+}
