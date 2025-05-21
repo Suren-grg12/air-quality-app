@@ -16,22 +16,22 @@ if (!OPENWEATHER_API_KEY) {
 app.use(express.static('public'));
 app.set('view engine', 'ejs');
 
-// Helper functions
-const getAqiClass = (aqi) => ['good', 'moderate', 'unhealthy-sensitive', 'unhealthy', 'very-unhealthy'][aqi - 1] || '';
-const getAqiDescription = (aqi) => [
-  'Good - Air quality is satisfactory',
-  'Moderate - Acceptable quality',
-  'Unhealthy for sensitive groups',
-  'Unhealthy - Health risks',
-  'Very Unhealthy - Health alert'
-][aqi - 1] || 'Unknown';
-
 // Routes
 app.get('/', (req, res) => {
   res.render('index', { 
     aqiData: null, 
     error: null,
-    defaultLocation: 'New York' 
+    defaultLocation: 'New York',
+    helpers: {
+      getAqiClass: (aqi) => ['good', 'moderate', 'unhealthy-sensitive', 'unhealthy', 'very-unhealthy'][aqi - 1] || '',
+      getAqiDescription: (aqi) => [
+        'Good - Air quality is satisfactory',
+        'Moderate - Acceptable quality',
+        'Unhealthy for sensitive groups',
+        'Unhealthy - Health risks',
+        'Very Unhealthy - Health alert'
+      ][aqi - 1] || 'Unknown'
+    }
   });
 });
 
@@ -42,14 +42,18 @@ app.get('/air-quality', async (req, res) => {
     return res.render('index', { 
       aqiData: null, 
       error: 'Please enter a city or county name',
-      defaultLocation: '' 
+      defaultLocation: '',
+      helpers: {
+        getAqiClass: () => '',
+        getAqiDescription: () => ''
+      }
     });
   }
 
   try {
     // Step 1: Get coordinates from city name
     const geoResponse = await axios.get(
-      `http://api.openweathermap.org/geo/1.0/direct?q=${location}&limit=1&appid=${OPENWEATHER_API_KEY}`
+      `http://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(location)}&limit=1&appid=${OPENWEATHER_API_KEY}`
     );
     
     if (!geoResponse.data || geoResponse.data.length === 0) {
@@ -71,14 +75,27 @@ app.get('/air-quality', async (req, res) => {
       aqiData: aqiResponse.data.list[0], 
       error: null,
       defaultLocation: location,
-      helpers: { getAqiClass, getAqiDescription }
+      helpers: {
+        getAqiClass: (aqi) => ['good', 'moderate', 'unhealthy-sensitive', 'unhealthy', 'very-unhealthy'][aqi - 1] || '',
+        getAqiDescription: (aqi) => [
+          'Good - Air quality is satisfactory',
+          'Moderate - Acceptable quality',
+          'Unhealthy for sensitive groups',
+          'Unhealthy - Health risks',
+          'Very Unhealthy - Health alert'
+        ][aqi - 1] || 'Unknown'
+      }
     });
   } catch (error) {
     console.error('Error:', error.message);
     res.render('index', { 
       aqiData: null, 
       error: error.message || 'Failed to fetch data',
-      defaultLocation: location 
+      defaultLocation: location,
+      helpers: {
+        getAqiClass: () => '',
+        getAqiDescription: () => ''
+      }
     });
   }
 });
@@ -86,3 +103,4 @@ app.get('/air-quality', async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
+module.exports = app; 
